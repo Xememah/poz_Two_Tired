@@ -13,10 +13,16 @@ type Local struct {
 func narrowDataByTimestamp(timestamp time.Time, duration time.Duration, data []*model.Activity) []*model.Activity {
 	for i := len(data) - 1; i >= 0; i-- {
 		activity := data[i]
+
 		matching := []model.Step{}
-		for _, step := range activity.Steps {
+		for j, step := range activity.Steps {
+
 			diff := timestamp.Unix() - step.Timestamp
 			if diff >= 0 && float64(diff) <= duration.Seconds() {
+				// always include a previous position when fetching timestamps
+				if j > 0 && len(matching) == 0 {
+					matching = append(matching, activity.Steps[j-1])
+				}
 				matching = append(matching, step)
 			}
 		}
