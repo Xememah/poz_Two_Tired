@@ -3,11 +3,11 @@ package converter
 import (
 	"io/ioutil"
 
+	"github.com/AllegroTechDays/poz_Two_Tired/backend/model"
+
 	"encoding/json"
 	"os"
 	"path"
-
-	"github.com/AllegroTechDays/poz_Two_Tired/backend/models"
 )
 
 type Collection struct {
@@ -15,35 +15,38 @@ type Collection struct {
 }
 
 type Activity struct {
-	Type     models.ActivityType `json:"type"`
+	Type     model.ActivityType `json:"type"`
 	Geometry struct {
 		Type        string      `json:"type"`
 		Coordinates [][]float64 `json:"coordinates"`
 	} `json:"geometry"`
 	Properties struct {
-		models.ActivityProperties
-		Timestamps []uint    `json:"timestamps"`
+		model.ActivityProperties
+		Timestamps []int64   `json:"timestamps"`
 		Elevations []float64 `json:"elevations"`
 	} `json:"properties"`
 }
 
-func convert(data Activity) models.Activity {
-	converted := models.Activity{
+func convert(data Activity) model.Activity {
+	converted := model.Activity{
 		ActivityProperties: data.Properties.ActivityProperties,
-		Type:               data.Type,
+		//Type:               data.Type,
 	}
 	for i, coords := range data.Geometry.Coordinates {
-		converted.Steps = append(converted.Steps, models.Step{
+		converted.Steps = append(converted.Steps, model.Step{
 			Timestamp: data.Properties.Timestamps[i],
-			Longitude: coords[1],
-			Latitude:  coords[0],
+			Position: model.Position{
+				Longitude: coords[1],
+				Latitude:  coords[0],
+			},
 		})
 	}
+	converted.HashVal = converted.Hash()
 	return converted
 }
 
-func Load(directory string) ([]models.Activity, error) {
-	converted := []models.Activity{}
+func Load(directory string) ([]model.Activity, error) {
+	converted := []model.Activity{}
 	files, err := ioutil.ReadDir(directory)
 	if err != nil {
 		return converted, err
