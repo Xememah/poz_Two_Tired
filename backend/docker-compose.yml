@@ -1,0 +1,19 @@
+version: '3'
+services:
+  twotired:
+    build: .
+    ports:
+      - "3000:3000"
+    links:
+      - database
+    depends_on:
+      - database
+  database:
+    restart: always
+    image: postgres:alpine
+    volumes:
+      - data:/var/lib/mysql/
+    env_file:
+      - ./credentials.env
+volumes:
+  data:
