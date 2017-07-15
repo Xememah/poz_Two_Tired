@@ -1,4 +1,4 @@
-package models
+package model
 
 import (
 	"crypto/sha1"
@@ -13,9 +13,10 @@ const (
 )
 
 type Activity struct {
-	ActivityProperties
-	Type  ActivityType
-	Steps []Step
+	ActivityProperties `json:",omitempty"`
+	HashVal            string `json:"hash,omitempty"`
+	//Type               ActivityType `json:"type,omitempty"`
+	Steps []Step `json:"steps,omitempty"`
 }
 
 func (a *Activity) Hash() string {
