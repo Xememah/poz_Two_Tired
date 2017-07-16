@@ -1,11 +1,19 @@
 <template>
+<div>
   <div id="map"></div>
+  <timeline @timeChange="timeChange"></timeline>
+</div>
 </template>
 
 <script>
+import Timeline from './Timeline.vue'
+
 export default {
+  components: {
+    'timeline': Timeline
+  },
   data () {
-    var API_PATH = 'http://twotired.math.party/data?timestamp=1483228952&duration=1000';
+    var API_PATH = 'http://twotired.math.party/data?timestamp=1483228952&duration=100';
 
     var request = new XMLHttpRequest();
     request.open("GET", API_PATH, false);
@@ -13,7 +21,7 @@ export default {
 
     var markers = JSON.parse(request.responseText);
     return {
-      markers: markers
+      markers: markers,
     }
   },
   mounted: function () {
@@ -21,6 +29,10 @@ export default {
     this.populateMarkers();
   },
   methods: {
+    timeChange: function(current) {
+      //console.log(current);
+      console.log(new Date(current*1000).toString())
+    },
     initMap: function () {
       var uluru = {lat: 52.385392, lng: 16.992963};
       this.map = new google.maps.Map(document.getElementById('map'), {
