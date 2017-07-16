@@ -11,18 +11,21 @@ export default {
             max: 0,
             min: 0,
             current: 0,
+            inter: {},
         }
     },
+    props: ['interval', 'addition'],
     mounted() {
         this.fetchData()
-        this.interval = window.setInterval(this.tick, 300);
+        this.inter = window.setInterval(this.tick, Number(this.interval));
     },
     dismounted() {
-        clearInterval(this.interval)
+        clearInterval(this.inter)
     },
     methods: {
         tick() {
-            this.current += 300
+            this.current += Number(this.addition)
+            //console.log(this.current)
             this.$emit('timeChange', this.current)
         },
         fetchData() {
@@ -35,7 +38,7 @@ export default {
             var constraints = JSON.parse(request.responseText);
             this.max = constraints.max;
             this.min = this.max-24*60*60;
-            this.current = this.min*1000;
+            this.current = 1483225486;
         }
     }
 }
