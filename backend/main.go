@@ -10,7 +10,6 @@ import (
 
 	"encoding/json"
 
-	"github.com/AllegroTechDays/poz_Two_Tired/backend/converter"
 	"github.com/AllegroTechDays/poz_Two_Tired/backend/store"
 )
 
@@ -34,13 +33,13 @@ func (app *App) Listen() {
 
 func main() {
 	logger := log.New(os.Stdout, "TwoTired", log.Ldate|log.Lshortfile)
-	data, err := converter.Load("./_data")
-	if err != nil {
-		logger.Fatal(err.Error())
-	}
 	app := &App{
-		Store:  &store.Local{Data: data},
+		Store:  &store.Local{},
 		Logger: logger,
+	}
+	err := app.Store.Init()
+	if err != nil {
+		logger.Fatalln(err.Error())
 	}
 	app.Listen()
 }

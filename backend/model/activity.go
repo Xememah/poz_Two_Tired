@@ -14,7 +14,7 @@ const (
 
 type Activity struct {
 	ActivityProperties `json:",omitempty"`
-	HashVal            string `json:"hash,omitempty"`
+	HashVal            string `json:"hash,omitempty" db:"hash,omitempty"`
 	//Type               ActivityType `json:"type,omitempty"`
 	Steps []Step `json:"steps,omitempty"`
 }

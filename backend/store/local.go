@@ -3,11 +3,21 @@ package store
 import (
 	"time"
 
+	"github.com/AllegroTechDays/poz_Two_Tired/backend/converter"
 	"github.com/AllegroTechDays/poz_Two_Tired/backend/model"
 )
 
 type Local struct {
 	Data []model.Activity
+}
+
+func (l *Local) Init() error {
+	data, err := converter.Load("./_data")
+	if err != nil {
+		return err
+	}
+	l.Data = data
+	return nil
 }
 
 func narrowDataByTimestamp(timestamp time.Time, duration time.Duration, data []*model.Activity) []*model.Activity {

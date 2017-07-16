@@ -7,5 +7,6 @@ import (
 )
 
 type Store interface {
+	Init() error
 	TimestampNarrowed(timestamp time.Time, offset time.Duration) ([]*model.Activity, error)
 }
