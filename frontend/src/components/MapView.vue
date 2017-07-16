@@ -21,6 +21,14 @@ export default {
       markers:{},
       markersData: undefined,
       lastUpdate: 0,
+      pathUpdate: 0,
+      colors: {
+        "BIKE_CITY": "#EA2E49",
+        "BIKE_MOUNTAIN": "#333745",
+        "BIKE_ROAD": "#5C832F",
+        "BIKE_TREKKING": "#2980B9",
+        "DEFAULT": "#cc0000"
+      }
     }
   },
   mounted: function () {
@@ -33,6 +41,7 @@ export default {
       client.get(apiPath, (response) => {
         this.markersData = JSON.parse(response).slice(0, 80);
         this.updatePaths(time);
+        this.pathUpdate = time;
       });
     },
     timeChange: function (current) {
@@ -47,9 +56,10 @@ export default {
         console.log(current)
         console.log(slider.noUiSlider.get())
         this.updatePaths(current);
+        this.pathUpdate = current;
       }
     },
-    updatePaths: function (time) {
+    updatePaths: function (time, oldData) {
       if (!this.markersData) {
         return;
       }
@@ -59,7 +69,13 @@ export default {
           this.markers[markerData.hash] = markerPath;
         } else {
           let line = this.markers[markerData.hash];
-          let newp = line.getPath();
+          let currPath = line.getPath();
+          for(let step of markerData.steps) {
+            if(step.ts > this.pathUpdate && step.ts <= time) {
+              currPath.push(new google.maps.LatLng(step.lat, step.lng));
+            }
+          }
+          continue;
           outer:
           for(let i=0;i<markerData.steps.length;i++) {
             let step = markerData.steps[i];
@@ -69,6 +85,11 @@ export default {
               }
             }
             if(step.ts<=time) {
+              if(step.last) {
+                line.setMap(null);
+                line = null;
+                break;
+              }
               newp.push(new google.maps.LatLng(step.lat, step.lng))
               markerData.steps.splice(i,1);
               i--;
@@ -81,8 +102,26 @@ export default {
       var lineSymbol = {
         path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
         scale: 3,
-        strokeColor: '#cc0000'
+        strokeWeight: 3
       };
+      var markerPath = new google.maps.Polyline({
+        icons: [{
+          icon: lineSymbol,
+          offset: '100%'
+        }],
+        geodesic: false,
+        strokeColor: '#cc0000',
+        strokeOpacity: 1,
+        strokeWeight: 3
+      });
+
+      if(this.colors[marker['activity_type']]) {
+        lineSymbol.strokeColor = this.colors[marker['activity_type']];
+        markerPath.strokeColor = this.colors[marker['activity_type']];
+      } else {
+        lineSymbol.strokeColor = this.colors["DEFAULT"];
+        markerPath.strokeColor = this.colors["DEFAULT"];
+      }
 
       var path = [];
       for (let step of marker.steps) {
@@ -90,18 +129,7 @@ export default {
           path.push({ lat: step.lat, lng: step.lng });
         }
       }
-
-      var markerPath = new google.maps.Polyline({
-        path: path,
-        icons: [{
-          icon: lineSymbol,
-          offset: '100%'
-        }],
-        geodesic: true,
-        strokeColor: '#cc0000',
-        strokeOpacity: 0.7,
-        strokeWeight: 5
-      });
+      markerPath.path = path;
       markerPath.setMap(this.map);
       return markerPath;
     },
