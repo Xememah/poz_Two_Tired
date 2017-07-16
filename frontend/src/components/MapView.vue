@@ -64,6 +64,11 @@ export default {
               }
             }
             if(step.ts<=time) {
+              if(step.last) {
+                line.setMap(null);
+                line = null;
+                break;
+              }
               newp.push(new google.maps.LatLng(step.lat, step.lng))
               markerData.steps.splice(i,1);
               i--;
