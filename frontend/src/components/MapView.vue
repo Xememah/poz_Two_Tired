@@ -15,9 +15,9 @@ export default {
   },
   data() {
     return {
-      interval: 300,
+      interval: 400,
       addition: 4,
-      future: 80,
+      future: 10,
       markers: {},
       markersData: undefined,
       lastUpdate: 0,
@@ -49,12 +49,7 @@ export default {
         this.lastUpdate = current;
         this.fetchData(current, this.future);
       } else {
-        console.log(new Date(current*1000).toString());
-
         var slider = document.getElementById('slider-connect');
-        //slider.noUiSlider.set("1483225606");
-        console.log(current)
-        console.log(slider.noUiSlider.get())
         this.updatePaths(current);
         this.pathUpdate = current;
       }

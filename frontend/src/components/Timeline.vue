@@ -17,7 +17,6 @@ export default {
     props: ['interval', 'addition'],
     mounted() {
         this.fetchData()
-        this.interval = window.setInterval(this.tick, 300);
 
         var timeline = document.getElementById('slider-connect');
         
