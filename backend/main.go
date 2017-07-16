@@ -86,6 +86,11 @@ func (app *App) serveData(rw http.ResponseWriter, req *http.Request) {
 		}
 		options.Distance = dist
 	}
+
+	if query.Get("hash") != "" {
+		options.Hash = query.Get("hash")
+	}
+
 	encoder := json.NewEncoder(rw)
 	data, err := app.Store.Narrowed(options)
 	if err != nil {

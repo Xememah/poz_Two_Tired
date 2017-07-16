@@ -20,6 +20,15 @@ func (l *Local) Init() error {
 	return nil
 }
 
+func narrowDataByHash(hash string, data []*model.Activity) []*model.Activity {
+	for _, activity := range data {
+		if activity.HashVal == hash {
+			return []*model.Activity{activity}
+		}
+	}
+	return []*model.Activity{}
+}
+
 func narrowDataByTimestamp(timestamp time.Time, duration time.Duration, data []*model.Activity) []*model.Activity {
 	for i := len(data) - 1; i >= 0; i-- {
 		activity := data[i]
@@ -68,6 +77,9 @@ func (l *Local) dataCopy() []*model.Activity {
 
 func (l *Local) Narrowed(query Query) ([]*model.Activity, error) {
 	data := l.dataCopy()
+	if query.Hash != "" {
+		data = narrowDataByHash(query.Hash, data)
+	}
 	if query.Timestamp != nil {
 		data = narrowDataByTimestamp(*query.Timestamp, query.Offset, data)
 	}

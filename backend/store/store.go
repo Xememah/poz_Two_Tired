@@ -7,6 +7,7 @@ import (
 )
 
 type Query struct {
+	Hash string
 	// position from which to measure distance
 	Position *model.Position
 	// distance in metres
