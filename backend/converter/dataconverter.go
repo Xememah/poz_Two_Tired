@@ -36,8 +36,8 @@ func convert(data *Activity) model.Activity {
 		step := model.Step{
 			Timestamp: data.Properties.Timestamps[i],
 			Position: model.Position{
-				Longitude: coords[1],
-				Latitude:  coords[0],
+				Longitude: coords[0],
+				Latitude:  coords[1],
 			},
 		}
 		if i == len(data.Geometry.Coordinates)-1 {
