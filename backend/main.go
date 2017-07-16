@@ -10,6 +10,7 @@ import (
 
 	"encoding/json"
 
+	"github.com/AllegroTechDays/poz_Two_Tired/backend/model"
 	"github.com/AllegroTechDays/poz_Two_Tired/backend/store"
 )
 
@@ -45,18 +46,48 @@ func main() {
 }
 
 func (app *App) serveData(rw http.ResponseWriter, req *http.Request) {
+	options := store.Query{}
 	query := req.URL.Query()
-	ts, err := strconv.ParseInt(query.Get("timestamp"), 10, 64)
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
-		return
+	if query.Get("timestamp") != "" {
+		ts, err := strconv.ParseInt(query.Get("timestamp"), 10, 64)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		timestamp := time.Unix(ts, 0)
+		options.Timestamp = &timestamp
+		duration, err := strconv.Atoi(query.Get("duration"))
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		options.Offset = time.Duration(duration) * time.Second
 	}
-	duration, err := strconv.Atoi(query.Get("duration"))
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
+
+	if query.Get("latitude") != "" && query.Get("longitude") != "" {
+		lat, err := strconv.ParseFloat(query.Get("latitude"), 64)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		lng, err := strconv.ParseFloat(query.Get("longitude"), 64)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		dist, err := strconv.ParseFloat(query.Get("distance"), 32)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		options.Position = &model.Position{
+			Latitude:  lat,
+			Longitude: lng,
+		}
+		options.Distance = dist
 	}
 	encoder := json.NewEncoder(rw)
-	data, err := app.Store.TimestampNarrowed(time.Unix(ts, 0), time.Duration(duration)*time.Second)
+	data, err := app.Store.Narrowed(options)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return

@@ -3,7 +3,6 @@ package store
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/AllegroTechDays/poz_Two_Tired/backend/model"
 	"github.com/jmoiron/sqlx"
@@ -43,6 +42,6 @@ func (p *Postgres) Init() error {
 	return nil
 }
 
-func (p *Postgres) TimestampNarrowed(timestamp time.Time, offset time.Duration) ([]model.Activity, error) {
-	return []model.Activity{}, nil
+func (p *Postgres) Narrowed(query Query) ([]*model.Activity, error) {
+	return []*model.Activity{}, nil
 }
