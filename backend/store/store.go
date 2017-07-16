@@ -6,6 +6,20 @@ import (
 	"github.com/AllegroTechDays/poz_Two_Tired/backend/model"
 )
 
+type Query struct {
+	Hash string
+	// position from which to measure distance
+	Position *model.Position
+	// distance in metres
+	Distance float64
+
+	// relative timestamp
+	Timestamp *time.Time
+	// how long in to the future shall we look
+	Offset time.Duration
+}
 type Store interface {
-	TimestampNarrowed(timestamp time.Time, offset time.Duration) ([]*model.Activity, error)
+	Init() error
+	Narrowed(query Query) ([]*model.Activity, error)
+	MinMaxTimestamps() (int64, int64, error)
 }

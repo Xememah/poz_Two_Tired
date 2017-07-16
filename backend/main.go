@@ -10,7 +10,7 @@ import (
 
 	"encoding/json"
 
-	"github.com/AllegroTechDays/poz_Two_Tired/backend/converter"
+	"github.com/AllegroTechDays/poz_Two_Tired/backend/model"
 	"github.com/AllegroTechDays/poz_Two_Tired/backend/store"
 )
 
@@ -27,6 +27,7 @@ func (app *App) Listen() {
 	}
 
 	http.HandleFunc("/data", app.serveData)
+	http.HandleFunc("/timestamps", app.serveTimestamps)
 	if err := server.ListenAndServe(); err != nil {
 		app.Logger.Fatal(err.Error())
 	}
@@ -34,35 +35,88 @@ func (app *App) Listen() {
 
 func main() {
 	logger := log.New(os.Stdout, "TwoTired", log.Ldate|log.Lshortfile)
-	data, err := converter.Load("./_data")
-	if err != nil {
-		logger.Fatal(err.Error())
-	}
 	app := &App{
-		Store:  &store.Local{Data: data},
+		Store:  &store.Local{},
 		Logger: logger,
+	}
+	err := app.Store.Init()
+	if err != nil {
+		logger.Fatalln(err.Error())
 	}
 	app.Listen()
 }
 
 func (app *App) serveData(rw http.ResponseWriter, req *http.Request) {
+	options := store.Query{}
 	query := req.URL.Query()
-	ts, err := strconv.ParseInt(query.Get("timestamp"), 10, 64)
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
-		return
+	if query.Get("timestamp") != "" {
+		ts, err := strconv.ParseInt(query.Get("timestamp"), 10, 64)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		timestamp := time.Unix(ts, 0)
+		options.Timestamp = &timestamp
+		duration, err := strconv.Atoi(query.Get("duration"))
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		options.Offset = time.Duration(duration) * time.Second
 	}
-	duration, err := strconv.Atoi(query.Get("duration"))
-	if err != nil {
-		http.Error(rw, err.Error(), http.StatusBadRequest)
+
+	if query.Get("latitude") != "" && query.Get("longitude") != "" {
+		lat, err := strconv.ParseFloat(query.Get("latitude"), 64)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		lng, err := strconv.ParseFloat(query.Get("longitude"), 64)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		dist, err := strconv.ParseFloat(query.Get("distance"), 32)
+		if err != nil {
+			http.Error(rw, err.Error(), http.StatusBadRequest)
+			return
+		}
+		options.Position = &model.Position{
+			Latitude:  lat,
+			Longitude: lng,
+		}
+		options.Distance = dist
 	}
+
+	if query.Get("hash") != "" {
+		options.Hash = query.Get("hash")
+	}
+
 	encoder := json.NewEncoder(rw)
-	data, err := app.Store.TimestampNarrowed(time.Unix(ts, 0), time.Duration(duration)*time.Second)
+	data, err := app.Store.Narrowed(options)
 	if err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if err := encoder.Encode(data); err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (app *App) serveTimestamps(rw http.ResponseWriter, req *http.Request) {
+	out := &struct {
+		Min int64 `json:"min"`
+		Max int64 `json:"max"`
+	}{}
+	var err error
+	out.Min, out.Max, err = app.Store.MinMaxTimestamps()
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	enc := json.NewEncoder(rw)
+	if err = enc.Encode(out); err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}
