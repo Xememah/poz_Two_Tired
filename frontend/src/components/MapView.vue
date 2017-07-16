@@ -1,108 +1,137 @@
 <template>
-<div>
-  <div id="map"></div>
-  <timeline @timeChange="timeChange"></timeline>
-</div>
+  <div>
+    <div id="map"></div>
+    <timeline @timeChange="timeChange" :interval="interval" :addition="addition"></timeline>
+  </div>
 </template>
 
 <script>
 import Timeline from './Timeline.vue'
+import HttpClient from '../httpclient.js'
 
 export default {
   components: {
     'timeline': Timeline
   },
-  data () {
-    var API_PATH = 'http://twotired.math.party/data?timestamp=1483228952&duration=100';
-
-    var request = new XMLHttpRequest();
-    request.open("GET", API_PATH, false);
-    request.send(null)
-
-    var markers = JSON.parse(request.responseText);
+  data() {
     return {
-      markers: markers,
+      interval: 500,
+      addition: 6,
+      future: 60,
+      markers:{},
+      markersData: undefined,
+      lastUpdate: 0,
     }
   },
   mounted: function () {
     this.initMap();
-    this.populateMarkers();
   },
   methods: {
-    timeChange: function(current) {
-      //console.log(current);
-      console.log(new Date(current*1000).toString())
+    fetchData: function (time, howManySecondsToSeeInToFuture) {
+      let apiPath = 'https://twotired.math.party/data?timestamp=' + time + '&duration=' + howManySecondsToSeeInToFuture;
+      let client = new HttpClient();
+      client.get(apiPath, (response) => {
+        this.markersData = JSON.parse(response).slice(0, 80);
+        this.updatePaths(time);
+      });
+    },
+    timeChange: function (current) {
+      if ((current-this.lastUpdate) > (this.future-this.addition)*(this.interval/1000)) {
+        this.lastUpdate = current;
+        this.fetchData(current, this.future);
+      } else {
+        console.log(new Date(current*1000).toString());
+
+        var slider = document.getElementById('slider-connect');
+        //slider.noUiSlider.set("1483225606");
+        console.log(current)
+        console.log(slider.noUiSlider.get())
+        this.updatePaths(current);
+      }
+    },
+    updatePaths: function (time) {
+      if (!this.markersData) {
+        return;
+      }
+      for (let markerData of this.markersData) {
+        if (!this.markers || !this.markers[markerData.hash]) {
+          let markerPath = this.initMarker(markerData, time);
+          this.markers[markerData.hash] = markerPath;
+        } else {
+          let line = this.markers[markerData.hash];
+          let newp = line.getPath();
+          outer:
+          for(let i=0;i<markerData.steps.length;i++) {
+            let step = markerData.steps[i];
+            for(let s of line.getPath().getArray()) {
+              if(step.lat == s.lat && step.lng == s.lng) {
+                continue outer;
+              }
+            }
+            if(step.ts<=time) {
+              newp.push(new google.maps.LatLng(step.lat, step.lng))
+              markerData.steps.splice(i,1);
+              i--;
+            }
+          }
+       }
+      }
+    },
+    initMarker: function (marker, current) {
+      var lineSymbol = {
+        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+        scale: 3,
+        strokeColor: '#cc0000'
+      };
+
+      var path = [];
+      for (let step of marker.steps) {
+        if (step.ts <= current) {
+          path.push({ lat: step.lat, lng: step.lng });
+        }
+      }
+
+      var markerPath = new google.maps.Polyline({
+        path: path,
+        icons: [{
+          icon: lineSymbol,
+          offset: '100%'
+        }],
+        geodesic: true,
+        strokeColor: '#cc0000',
+        strokeOpacity: 0.7,
+        strokeWeight: 5
+      });
+      markerPath.setMap(this.map);
+      return markerPath;
     },
     initMap: function () {
-      var uluru = {lat: 52.385392, lng: 16.992963};
+      var uluru = { lat: 52.385392, lng: 16.992963 };
       this.map = new google.maps.Map(document.getElementById('map'), {
-          scrollwheel: false,
-          zoom: 13,
-          center: uluru
+        scrollwheel: false,
+        zoom: 13,
+        center: uluru
       })
       // this.changeTarget();
     },
     populateMarkers: function () {
-      this.markers = this.markers.slice(0, 20)
-      var map = this.map
-      for (let i in this.markers) {
-        let data = this.markers[i].steps;
-        // console.log(data)
-        /*let latLng = new google.maps.LatLng(data[0].lat, data[0].lng);
-
-        let marker = new google.maps.Marker({
-          position: latLng,
-          map: this.map,
-          clickable: true,
-          title: data.name,
-          data: data
-        });
-        this.markers[i].marker = marker;*/
-
-        var lineSymbol = {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 10,
-          strokeColor: '#cc0000'
-        };
-
-        var path = [];
-        for (let j in data) {
-          path.push({lat: data[j].lat, lng: data[j].lng});
+      this.animateCircle(markerPath)
+      /*google.maps.event.addListener(marker, 'click', function () {
+        map.panTo(this.position);
+        // if a tooltip is present, dispose it
+        if (tooltip) {
+          tooltip.close();
         }
-
-        var markerPath = new google.maps.Polyline({
-          path: path,
-          icons: [{
-            icon: lineSymbol,
-            offset: '100%'
-          }],
-          geodesic: true,
-          strokeColor: '#cc0000',
-          strokeOpacity: 0.7,
-          strokeWeight: 5
+        tooltip = new google.maps.InfoWindow({
+          content: createTooltip(this.data, pict)
         });
-
-        this.animateCircle(markerPath)
-
-        markerPath.setMap(this.map);
-
-
-        /*google.maps.event.addListener(marker, 'click', function () {
-          map.panTo(this.position);
-          // if a tooltip is present, dispose it
-          if (tooltip) {
-            tooltip.close();
-          }
-          tooltip = new google.maps.InfoWindow({
-            content: createTooltip(this.data, pict)
-          });
-          tooltip.open(map, this);
-        })*/
-      }
+        tooltip.open(map, this);
+      })*/
+      //}
     },
     animateCircle: function (line) {
       var count = 0;
-      window.setInterval(function() {
+      window.setInterval(function () {
         count = (count + 1) % 200;
 
         var icons = line.get('icons');
