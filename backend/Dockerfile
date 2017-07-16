@@ -1,4 +1,4 @@
-FROM golang:1.8
+FROM golang:alpine
 
 WORKDIR /go/src/github.com/AllegroTechDays/poz_Two_Tired/backend
 COPY . .
