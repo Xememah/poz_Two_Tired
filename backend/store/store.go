@@ -21,4 +21,5 @@ type Query struct {
 type Store interface {
 	Init() error
 	Narrowed(query Query) ([]*model.Activity, error)
+	MinMaxTimestamps() (int64, int64, error)
 }

@@ -2,6 +2,7 @@ package converter
 
 import (
 	"io/ioutil"
+	"time"
 
 	"github.com/AllegroTechDays/poz_Two_Tired/backend/model"
 
@@ -49,25 +50,35 @@ func convert(data *Activity) model.Activity {
 	return converted
 }
 
-func Load(directory string) ([]model.Activity, error) {
+func Load(directory string) ([]model.Activity, int64, int64, error) {
 	converted := []model.Activity{}
 	files, err := ioutil.ReadDir(directory)
+	min := time.Now().Unix()
+	max := int64(0)
 	if err != nil {
-		return converted, err
+		return converted, min, max, err
 	}
 	for _, desc := range files {
 		file, err := os.Open(path.Join(directory, desc.Name()))
 		if err != nil {
-			return converted, err
+			return converted, min, max, err
 		}
 		decoder := json.NewDecoder(file)
 		raw := &Collection{}
 		if err := decoder.Decode(raw); err != nil {
-			return converted, err
+			return converted, min, max, err
 		}
 		for _, feature := range raw.Features {
+			for _, ts := range feature.Properties.Timestamps {
+				if ts > max {
+					max = ts
+				}
+				if ts < min {
+					min = ts
+				}
+			}
 			converted = append(converted, convert(&feature))
 		}
 	}
-	return converted, nil
+	return converted, min, max, nil
 }

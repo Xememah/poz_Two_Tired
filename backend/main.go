@@ -27,6 +27,7 @@ func (app *App) Listen() {
 	}
 
 	http.HandleFunc("/data", app.serveData)
+	http.HandleFunc("/timestamps", app.serveTimestamps)
 	if err := server.ListenAndServe(); err != nil {
 		app.Logger.Fatal(err.Error())
 	}
@@ -98,6 +99,24 @@ func (app *App) serveData(rw http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if err := encoder.Encode(data); err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (app *App) serveTimestamps(rw http.ResponseWriter, req *http.Request) {
+	out := &struct {
+		Min int64 `json:"min"`
+		Max int64 `json:"max"`
+	}{}
+	var err error
+	out.Min, out.Max, err = app.Store.MinMaxTimestamps()
+	if err != nil {
+		http.Error(rw, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	enc := json.NewEncoder(rw)
+	if err = enc.Encode(out); err != nil {
 		http.Error(rw, err.Error(), http.StatusInternalServerError)
 		return
 	}

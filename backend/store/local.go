@@ -8,15 +8,19 @@ import (
 )
 
 type Local struct {
-	Data []model.Activity
+	Data         []model.Activity
+	minTimestamp int64
+	maxTimestamp int64
 }
 
 func (l *Local) Init() error {
-	data, err := converter.Load("./_data")
+	data, min, max, err := converter.Load("./_data")
 	if err != nil {
 		return err
 	}
 	l.Data = data
+	l.minTimestamp = min
+	l.maxTimestamp = max
 	return nil
 }
 
@@ -87,4 +91,8 @@ func (l *Local) Narrowed(query Query) ([]*model.Activity, error) {
 		data = narrowDataByLocation(*query.Position, query.Distance, data)
 	}
 	return data, nil
+}
+
+func (l *Local) MinMaxTimestamps() (int64, int64, error) {
+	return l.minTimestamp, l.maxTimestamp, nil
 }
