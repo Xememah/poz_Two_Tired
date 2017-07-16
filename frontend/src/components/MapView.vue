@@ -15,10 +15,10 @@ export default {
   },
   data() {
     return {
-      interval: 500,
-      addition: 6,
-      future: 60,
-      markers:{},
+      interval: 300,
+      addition: 4,
+      future: 80,
+      markers: {},
       markersData: undefined,
       lastUpdate: 0,
       pathUpdate: 0,
@@ -45,7 +45,7 @@ export default {
       });
     },
     timeChange: function (current) {
-      if ((current-this.lastUpdate) > (this.future-this.addition)*(this.interval/1000)) {
+      if (this.markersData === undefined || (current - this.lastUpdate) > this.future-this.addition) {
         this.lastUpdate = current;
         this.fetchData(current, this.future);
       } else {
@@ -53,7 +53,7 @@ export default {
         this.pathUpdate = current;
       }
     },
-    updatePaths: function (time, oldData) {
+    updatePaths: function (time) {
       if (!this.markersData) {
         return;
       }
@@ -64,32 +64,24 @@ export default {
         } else {
           let line = this.markers[markerData.hash];
           let currPath = line.getPath();
-          for(let step of markerData.steps) {
-            if(step.ts > this.pathUpdate && step.ts <= time) {
+          let prev;
+          for (let step of markerData.steps) {
+            if (Number(step.ts) > this.pathUpdate && Number(step.ts) <= time) {
+              prev = step;
               currPath.push(new google.maps.LatLng(step.lat, step.lng));
-            }
-          }
-          continue;
-          outer:
-          for(let i=0;i<markerData.steps.length;i++) {
-            let step = markerData.steps[i];
-            for(let s of line.getPath().getArray()) {
-              if(step.lat == s.lat && step.lng == s.lng) {
-                continue outer;
-              }
-            }
-            if(step.ts<=time) {
               if(step.last) {
                 line.setMap(null);
-                line = null;
                 break;
               }
-              newp.push(new google.maps.LatLng(step.lat, step.lng))
-              markerData.steps.splice(i,1);
-              i--;
+            } else if(Number(step.ts) > this.pathUpdate && prev && Number(step.ts)>time) {
+              continue;
+              let dlat = Number(prev.lat)+(Number(step.lat)-Number(prev.lat))/(Number(step.ts)-time);
+              let dlng = Number(prev.lng)+(Number(step.lng)-Number(prev.lng))/(Number(step.ts)-time);
+              currPath.push(new google.maps.LatLng(dlat, dlng));
+              break;
             }
           }
-       }
+        }
       }
     },
     initMarker: function (marker, current) {
@@ -109,7 +101,7 @@ export default {
         strokeWeight: 3
       });
 
-      if(this.colors[marker['activity_type']]) {
+      if (this.colors[marker['activity_type']]) {
         lineSymbol.strokeColor = this.colors[marker['activity_type']];
         markerPath.strokeColor = this.colors[marker['activity_type']];
       } else {
@@ -119,7 +111,7 @@ export default {
 
       var path = [];
       for (let step of marker.steps) {
-        if (step.ts <= current) {
+        if (Number(step.ts) <= current) {
           path.push({ lat: step.lat, lng: step.lng });
         }
       }
