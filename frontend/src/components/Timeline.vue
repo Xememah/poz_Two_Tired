@@ -20,7 +20,7 @@ export default {
 
         var timeline = document.getElementById('slider-connect');
         
-        console.log(this.min + ' ; ' + this.max)
+       // console.log(this.min + ' ; ' + this.max)
 
         var base = this
         function toDate (v) {
@@ -51,7 +51,6 @@ export default {
                 'min': this.min-5000,
                 'max': this.max+5000
             },
-            step: 2000,
             pips: {
                 format: { to: toDatePips, from: Number },
                 mode: 'values',
@@ -105,7 +104,7 @@ export default {
                     nth(date.getDate(), false) + "." +
                     nth(date.getMonth(), true) + "." +
                     date.getFullYear() + " <strong>" + nth(date.getHours(), false) +
-                    ":" + nth(date.getMinutes(), false) + "</strong>";
+                    ":" + nth(date.getMinutes(), false) + ":" + nth(date.getSeconds(), false) + "</strong>";
             else
                 return nth(date.getDate(), false) + "." +
                     nth(date.getMonth(), true) + "." +

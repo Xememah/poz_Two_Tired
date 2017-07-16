@@ -51,7 +51,7 @@ export default {
       } else {
         var slider = document.getElementById('slider-connect');
         slider.noUiSlider.set(current);
-        console.log(current*1000)
+        //console.log(current*1000)
         this.updatePaths(current);
         this.pathUpdate = current;
       }
