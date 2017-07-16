@@ -5,7 +5,7 @@
 <script>
 export default {
   data () {
-    var API_PATH = 'http://twotired.math.party/data?timestamp=1483228952&duration=1000';
+    var API_PATH = 'http://twotired.math.party/data?timestamp=1483228952&duration=100';
 
     var request = new XMLHttpRequest();
     request.open("GET", API_PATH, false);
@@ -31,7 +31,6 @@ export default {
       // this.changeTarget();
     },
     populateMarkers: function () {
-      this.markers = this.markers.slice(0, 20)
       var map = this.map
       for (let i in this.markers) {
         let data = this.markers[i].steps;
